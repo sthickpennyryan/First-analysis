@@ -1,1 +1,458 @@
 
+#Loading pandas and importing the file.
+import pandas as pd
+import numpy as np
+SuperStoreOrders = pd.read_csv('Downloads\SuperStoreOrders.csv', sep=',')
+SuperStoreOrders.shape
+#gaining basic information about the dataset.
+(51292, 20)
+SuperStoreOrders.info()
+#expecting sales, shipping cost, profit to be an int/float.
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 51292 entries, 0 to 51291
+Data columns (total 20 columns):
+ #   Column          Non-Null Count  Dtype 
+---  ------          --------------  ----- 
+ 0   order_id        51292 non-null  object
+ 1   order_date      51292 non-null  object
+ 2   ship_date       51292 non-null  object
+ 3   ship_mode       51292 non-null  object
+ 4   customer_name   51292 non-null  object
+ 5   segment         51284 non-null  object
+ 6   state           51292 non-null  object
+ 7   country         51292 non-null  object
+ 8   market          51292 non-null  object
+ 9   region          51292 non-null  object
+ 10  product_id      51292 non-null  object
+ 11  category        51292 non-null  object
+ 12  sub_category    51292 non-null  object
+ 13  product_name    51292 non-null  object
+ 14  sales           51292 non-null  object
+ 15  quantity        51292 non-null  int64 
+ 16  discount        51292 non-null  object
+ 17  profit          51292 non-null  object
+ 18  shipping_cost   51288 non-null  object
+ 19  order_priority  51292 non-null  object
+dtypes: int64(1), object(19)
+memory usage: 7.8+ MB
+SuperStoreOrders.head()
+#can immediately see that some changes are needed.
+#e.g., $ on discount, shipping cost and sales.
+#unsure how % at the end affects discount so will find out.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	product_id	category	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority
+0	AG-2011-2040	1/1/2011	6/1/2011	Standard Class	Toby Braunhardt	Consumer	Constantine	Algeria	Africa	Africa	OFF-TEN-10000025	Office Supplies	Storage	Tenex Lockers, Blue	$408	2	0.00%	$106.14	$35.46	Medium
+1	IN-2011-47883	1/1/2011	8/1/2011	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	OFF-SU-10000618	Office Supplies	Supplies	Acme Trimmer, High Speed	$120	3	10.00%	$36.04	$9.72	Medium
+2	HU-2011-1220	1/1/2011	5/1/2011	Second Class	Annie Thurman	Consumer	Budapest	Hungary	EMEA	EMEA	OFF-TEN-10001585	Office Supplies	Storage	Tenex Box, Single Width	$66	4	0.00%	$29.64	$8.17	High
+3	IT-2011-3647632	1/1/2011	5/1/2011	Second Class	Eugene Moren	Home Office	Stockholm	Sweden	EU	North	OFF-PA-10001492	Office Supplies	Paper	Enermax Note Cards, Premium	$45	3	50.00%	-$26.06	$4.82	High
+4	IN-2011-47883	1/1/2011	8/1/2011	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	FUR-FU-10003447	Furniture	Furnishings	Eldon Light Bulb, Duo Pack	$114	5	10.00%	$37.77	$4.70	Medium
+#finding missing data
+SuperStoreOrders.isnull().sum()
+#4 missing values in shipping. 8 in segment.
+order_id          0
+order_date        0
+ship_date         0
+ship_mode         0
+customer_name     0
+segment           8
+state             0
+country           0
+market            0
+region            0
+product_id        0
+category          0
+sub_category      0
+product_name      0
+sales             0
+quantity          0
+discount          0
+profit            0
+shipping_cost     4
+order_priority    0
+dtype: int64
+#removing data without values.
+SuperStoreOrders2 = SuperStoreOrders.dropna()
+SuperStoreOrders2.shape
+#this has removed the 12 rows with missing values.
+(51280, 20)
+SuperStoreOrders2.duplicated().sum()
+#identifying 2 duplicated rows.
+2
+duplicate = SuperStoreOrders2.duplicated(keep=False)
+SuperStoreOrders2[duplicate]
+#these are the duplicated rows.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	product_id	category	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority
+51289	CA-2014-156720	31/12/2014	4/1/2015	Standard Class	Jill Matthias	Consumer	Colorado	United States	US	West	OFF-FA-10003472	Office Supplies	Fasteners	Bagged Rubber Bands	$3	3	20.00%	-$0.60	$0.17	Medium
+51290	CA-2014-156720	31/12/2014	4/1/2015	Standard Class	Jill Matthias	Consumer	Colorado	United States	US	West	OFF-FA-10003472	Office Supplies	Fasteners	Bagged Rubber Bands	$3	3	20.00%	-$0.60	$0.17	Medium
+51291	CA-2014-156720	31/12/2014	4/1/2015	Standard Class	Jill Matthias	Consumer	Colorado	United States	US	West	OFF-FA-10003472	Office Supplies	Fasteners	Bagged Rubber Bands	$3	3	20.00%	-$0.60	$0.17	Medium
+SuperStoreOrders3 = SuperStoreOrders2.drop_duplicates()
+SuperStoreOrders3.shape
+#shape shows 2 rows have gone, aka the duplicated ones.
+(51278, 20)
+SuperStoreOrders3.head()
+#to show me what i'm working with to look for things to change.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	product_id	category	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority
+0	AG-2011-2040	1/1/2011	6/1/2011	Standard Class	Toby Braunhardt	Consumer	Constantine	Algeria	Africa	Africa	OFF-TEN-10000025	Office Supplies	Storage	Tenex Lockers, Blue	$408	2	0.00%	$106.14	$35.46	Medium
+1	IN-2011-47883	1/1/2011	8/1/2011	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	OFF-SU-10000618	Office Supplies	Supplies	Acme Trimmer, High Speed	$120	3	10.00%	$36.04	$9.72	Medium
+2	HU-2011-1220	1/1/2011	5/1/2011	Second Class	Annie Thurman	Consumer	Budapest	Hungary	EMEA	EMEA	OFF-TEN-10001585	Office Supplies	Storage	Tenex Box, Single Width	$66	4	0.00%	$29.64	$8.17	High
+3	IT-2011-3647632	1/1/2011	5/1/2011	Second Class	Eugene Moren	Home Office	Stockholm	Sweden	EU	North	OFF-PA-10001492	Office Supplies	Paper	Enermax Note Cards, Premium	$45	3	50.00%	-$26.06	$4.82	High
+4	IN-2011-47883	1/1/2011	8/1/2011	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	FUR-FU-10003447	Furniture	Furnishings	Eldon Light Bulb, Duo Pack	$114	5	10.00%	$37.77	$4.70	Medium
+SuperStoreOrders3['sales'] = SuperStoreOrders3['sales'].str.replace('$', '').str.replace(',', '').astype(int)
+SuperStoreOrders3['discount'] = SuperStoreOrders3['discount'].str.replace('%', '').str.replace(',','').astype(float)
+SuperStoreOrders3['profit'] = SuperStoreOrders3['profit'].str.replace('$', '').str.replace(',','').astype(float)
+SuperStoreOrders3['shipping_cost'] = SuperStoreOrders3['shipping_cost'].str.replace('$', '').str.replace(',','').astype(float)
+SuperStoreOrders3.head()
+#changing values so that I can change the type.
+#not sure what the red text thing is about though.
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\3419136559.py:1: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['sales'] = SuperStoreOrders3['sales'].str.replace('$', '').str.replace(',', '').astype(int)
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\3419136559.py:2: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['discount'] = SuperStoreOrders3['discount'].str.replace('%', '').str.replace(',','').astype(float)
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\3419136559.py:3: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['profit'] = SuperStoreOrders3['profit'].str.replace('$', '').str.replace(',','').astype(float)
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\3419136559.py:4: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['shipping_cost'] = SuperStoreOrders3['shipping_cost'].str.replace('$', '').str.replace(',','').astype(float)
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	product_id	category	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority
+0	AG-2011-2040	1/1/2011	6/1/2011	Standard Class	Toby Braunhardt	Consumer	Constantine	Algeria	Africa	Africa	OFF-TEN-10000025	Office Supplies	Storage	Tenex Lockers, Blue	408	2	0.0	106.14	35.46	Medium
+1	IN-2011-47883	1/1/2011	8/1/2011	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	OFF-SU-10000618	Office Supplies	Supplies	Acme Trimmer, High Speed	120	3	10.0	36.04	9.72	Medium
+2	HU-2011-1220	1/1/2011	5/1/2011	Second Class	Annie Thurman	Consumer	Budapest	Hungary	EMEA	EMEA	OFF-TEN-10001585	Office Supplies	Storage	Tenex Box, Single Width	66	4	0.0	29.64	8.17	High
+3	IT-2011-3647632	1/1/2011	5/1/2011	Second Class	Eugene Moren	Home Office	Stockholm	Sweden	EU	North	OFF-PA-10001492	Office Supplies	Paper	Enermax Note Cards, Premium	45	3	50.0	-26.06	4.82	High
+4	IN-2011-47883	1/1/2011	8/1/2011	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	FUR-FU-10003447	Furniture	Furnishings	Eldon Light Bulb, Duo Pack	114	5	10.0	37.77	4.70	Medium
+SuperStoreOrders3.info()
+<class 'pandas.core.frame.DataFrame'>
+Index: 51278 entries, 0 to 51289
+Data columns (total 20 columns):
+ #   Column          Non-Null Count  Dtype  
+---  ------          --------------  -----  
+ 0   order_id        51278 non-null  object 
+ 1   order_date      51278 non-null  object 
+ 2   ship_date       51278 non-null  object 
+ 3   ship_mode       51278 non-null  object 
+ 4   customer_name   51278 non-null  object 
+ 5   segment         51278 non-null  object 
+ 6   state           51278 non-null  object 
+ 7   country         51278 non-null  object 
+ 8   market          51278 non-null  object 
+ 9   region          51278 non-null  object 
+ 10  product_id      51278 non-null  object 
+ 11  category        51278 non-null  object 
+ 12  sub_category    51278 non-null  object 
+ 13  product_name    51278 non-null  object 
+ 14  sales           51278 non-null  int32  
+ 15  quantity        51278 non-null  int64  
+ 16  discount        51278 non-null  float64
+ 17  profit          51278 non-null  float64
+ 18  shipping_cost   51278 non-null  float64
+ 19  order_priority  51278 non-null  object 
+dtypes: float64(3), int32(1), int64(1), object(15)
+memory usage: 8.0+ MB
+SuperStoreOrders3.shape
+(51278, 20)
+SuperStoreOrders.tail()
+#can immediately see that some changes are needed.
+#e.g., $ on discount, shipping cost and sales.
+#unsure how % at the end affects discount so will find out.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	product_id	category	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority
+51287	MX-2014-110527	31/12/2014	2/1/2015	Second Class	Charlotte Melton	Consumer	Managua	Nicaragua	LATAM	Central	OFF-LA-10004182	Office Supplies	Labels	Hon Color Coded Labels, 5000 Label Set	$26	3	0.00%	$12.36	$0.35	Medium
+51288	MX-2014-114783	31/12/2014	6/1/2015	Standard Class	Tamara Dahlen	Consumer	Chihuahua	Mexico	LATAM	North	OFF-LA-10000413	Office Supplies	Labels	Hon Legal Exhibit Labels, Alphabetical	$7	1	0.00%	$0.56	$0.20	Medium
+51289	CA-2014-156720	31/12/2014	4/1/2015	Standard Class	Jill Matthias	Consumer	Colorado	United States	US	West	OFF-FA-10003472	Office Supplies	Fasteners	Bagged Rubber Bands	$3	3	20.00%	-$0.60	$0.17	Medium
+51290	CA-2014-156720	31/12/2014	4/1/2015	Standard Class	Jill Matthias	Consumer	Colorado	United States	US	West	OFF-FA-10003472	Office Supplies	Fasteners	Bagged Rubber Bands	$3	3	20.00%	-$0.60	$0.17	Medium
+51291	CA-2014-156720	31/12/2014	4/1/2015	Standard Class	Jill Matthias	Consumer	Colorado	United States	US	West	OFF-FA-10003472	Office Supplies	Fasteners	Bagged Rubber Bands	$3	3	20.00%	-$0.60	$0.17	Medium
+SuperStoreOrders3['order_date'] = pd.to_datetime(SuperStoreOrders3['order_date'], format ='%d/%m/%Y')
+SuperStoreOrders3['ship_date'] = pd.to_datetime(SuperStoreOrders3['ship_date'], format ='%d/%m/%Y')
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\703621726.py:1: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['order_date'] = pd.to_datetime(SuperStoreOrders3['order_date'], format ='%d/%m/%Y')
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\703621726.py:2: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['ship_date'] = pd.to_datetime(SuperStoreOrders3['ship_date'], format ='%d/%m/%Y')
+SuperStoreOrders3.info()
+<class 'pandas.core.frame.DataFrame'>
+Index: 51278 entries, 0 to 51289
+Data columns (total 20 columns):
+ #   Column          Non-Null Count  Dtype         
+---  ------          --------------  -----         
+ 0   order_id        51278 non-null  object        
+ 1   order_date      51278 non-null  datetime64[ns]
+ 2   ship_date       51278 non-null  datetime64[ns]
+ 3   ship_mode       51278 non-null  object        
+ 4   customer_name   51278 non-null  object        
+ 5   segment         51278 non-null  object        
+ 6   state           51278 non-null  object        
+ 7   country         51278 non-null  object        
+ 8   market          51278 non-null  object        
+ 9   region          51278 non-null  object        
+ 10  product_id      51278 non-null  object        
+ 11  category        51278 non-null  object        
+ 12  sub_category    51278 non-null  object        
+ 13  product_name    51278 non-null  object        
+ 14  sales           51278 non-null  int32         
+ 15  quantity        51278 non-null  int64         
+ 16  discount        51278 non-null  float64       
+ 17  profit          51278 non-null  float64       
+ 18  shipping_cost   51278 non-null  float64       
+ 19  order_priority  51278 non-null  object        
+dtypes: datetime64[ns](2), float64(3), int32(1), int64(1), object(13)
+memory usage: 8.0+ MB
+SuperStoreOrders3['Year'] = SuperStoreOrders3['order_date'].dt.year
+#SuperStoreOrders3['Month'] = SuperStoreOrders3['order_date'].dt.month_name()
+#SuperStoreOrders3['Day'] = SuperStoreOrders3['order_date'].dt.day_name()
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\2502944543.py:1: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['Year'] = SuperStoreOrders3['order_date'].dt.year
+SuperStoreOrders3.head(1)
+#this was for me to check if the year column had been added.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	...	category	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority	Year
+0	AG-2011-2040	2011-01-01	2011-01-06	Standard Class	Toby Braunhardt	Consumer	Constantine	Algeria	Africa	Africa	...	Office Supplies	Storage	Tenex Lockers, Blue	408	2	0.0	106.14	35.46	Medium	2011
+1 rows × 21 columns
+
+SuperStoreOrders3['sales'].value_counts()
+sales
+13      589
+11      550
+14      527
+19      522
+17      520
+       ... 
+1501      1
+1413      1
+3802      1
+2036      1
+1831      1
+Name: count, Length: 2246, dtype: int64
+SuperStoreOrders3['product_name'].value_counts()
+#seeing how many sales for each product.
+product_name
+Staples                                                                                227
+Cardinal Index Tab, Clear                                                               92
+Eldon File Cart, Single Width                                                           90
+Rogers File Cart, Single Width                                                          84
+Ibico Index Tab, Clear                                                                  83
+                                                                                      ... 
+Canon Color ImageCLASS MF8580Cdw Wireless Laser All-In-One Printer, Copier, Scanner      1
+Xerox Blank Computer Paper                                                               1
+Ultra Commercial Grade Dual Valve Door Closer                                            1
+Panasonic KX MB2061 Multifunction Printer                                                1
+Acco Glide Clips                                                                         1
+Name: count, Length: 3788, dtype: int64
+SuperStoreOrders3['category'].value_counts()
+#seeing how many of each category are present in the dataset.
+category
+Office Supplies    31267
+Technology         10135
+Furniture           9876
+Name: count, dtype: int64
+SuperStoreOrders3['sub_category'].value_counts()
+#seeing how many of each sub category are present in the dataset.
+sub_category
+Binders        6150
+Storage        5059
+Art            4882
+Paper          3537
+Chairs         3434
+Phones         3356
+Furnishings    3170
+Accessories    3072
+Labels         2606
+Envelopes      2434
+Supplies       2424
+Fasteners      2420
+Bookcases      2411
+Copiers        2222
+Appliances     1755
+Machines       1485
+Tables          861
+Name: count, dtype: int64
+SuperStoreOrders3['state'].value_counts()
+#counting how many different states and how many times they appear.
+state
+California          2000
+England             1499
+New York            1128
+Texas                985
+Ile-de-France        981
+                    ... 
+Rize                   1
+Meta                   1
+Ar Raqqah              1
+Södermanland           1
+Atsimo-Andrefana       1
+Name: count, Length: 1094, dtype: int64
+SuperStoreOrders3['ship_mode'].value_counts()
+#shipping types.
+ship_mode
+Standard Class    30768
+Second Class      10306
+First Class        7504
+Same Day           2700
+Name: count, dtype: int64
+print(SuperStoreOrders3['Year'].dtypes)
+print(SuperStoreOrders3['ship_date'].dtypes)
+print(SuperStoreOrders3['order_date'].dtypes)
+#I was having issues with the next line of ship_date - order_date so was ensuring these were in the right datatypes.
+int32
+datetime64[ns]
+datetime64[ns]
+SuperStoreOrders3['Delivery Days'] = SuperStoreOrders3['ship_date'] - SuperStoreOrders3['order_date']
+#this wasn't working yesterday? Unsure why, told me that the datetime prefixes weren't there despite display saying
+#that they were.
+C:\Users\samue\AppData\Local\Temp\ipykernel_22852\4145947573.py:1: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  SuperStoreOrders3['Delivery Days'] = SuperStoreOrders3['ship_date'] - SuperStoreOrders3['order_date']
+SuperStoreOrders3['Delivery Days']
+#how long each delivery took.
+0       5 days
+1       7 days
+2       4 days
+3       4 days
+4       7 days
+         ...  
+51285   4 days
+51286   5 days
+51287   2 days
+51288   6 days
+51289   4 days
+Name: Delivery Days, Length: 51278, dtype: timedelta64[ns]
+SuperStoreOrders3.head()
+#checking delivery days was added.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	...	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority	Year	Delivery Days
+0	AG-2011-2040	2011-01-01	2011-01-06	Standard Class	Toby Braunhardt	Consumer	Constantine	Algeria	Africa	Africa	...	Storage	Tenex Lockers, Blue	408	2	0.0	106.14	35.46	Medium	2011	5 days
+1	IN-2011-47883	2011-01-01	2011-01-08	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	...	Supplies	Acme Trimmer, High Speed	120	3	10.0	36.04	9.72	Medium	2011	7 days
+2	HU-2011-1220	2011-01-01	2011-01-05	Second Class	Annie Thurman	Consumer	Budapest	Hungary	EMEA	EMEA	...	Storage	Tenex Box, Single Width	66	4	0.0	29.64	8.17	High	2011	4 days
+3	IT-2011-3647632	2011-01-01	2011-01-05	Second Class	Eugene Moren	Home Office	Stockholm	Sweden	EU	North	...	Paper	Enermax Note Cards, Premium	45	3	50.0	-26.06	4.82	High	2011	4 days
+4	IN-2011-47883	2011-01-01	2011-01-08	Standard Class	Joseph Holt	Consumer	New South Wales	Australia	APAC	Oceania	...	Furnishings	Eldon Light Bulb, Duo Pack	114	5	10.0	37.77	4.70	Medium	2011	7 days
+5 rows × 22 columns
+
+#Calculate the total profit made from the sales over the years.
+
+Profit = SuperStoreOrders3['profit'].sum()
+print(f' The total profit over the years is £{Profit:.2f}')
+ The total profit over the years is £1468055.36
+#Determine the total number of orders from each region.
+
+Region = SuperStoreOrders3['region'].value_counts()
+Region
+#gives me each of the regions and how many orders per region.
+region
+Central           11117
+South              6645
+EMEA               5029
+North              4781
+Africa             4585
+Oceania            3486
+West               3202
+Southeast Asia     3127
+East               2848
+North Asia         2337
+Central Asia       2048
+Caribbean          1689
+Canada              384
+Name: count, dtype: int64
+#Calculate the average shipping cost for each sub-category and sort the results from highest to lowest.
+
+SuperStoreOrders3.groupby('sub_category')['shipping_cost'].mean().sort_values(ascending=False)
+
+#grouping all the sub categories average shipping cost. going from highest to lowest.
+sub_category
+Tables         92.754309
+Copiers        71.755567
+Bookcases      64.488689
+Appliances     61.709846
+Phones         55.093814
+Machines       53.104633
+Chairs         47.824651
+Accessories    27.163656
+Storage        23.828120
+Furnishings    12.853981
+Supplies       10.235627
+Art             8.452753
+Binders         7.833976
+Envelopes       7.609511
+Paper           7.536590
+Fasteners       3.741153
+Labels          3.092817
+Name: shipping_cost, dtype: float64
+#Compute the total profit made from each category and sub-category.
+
+print(SuperStoreOrders3.groupby('category')['profit'].sum())
+print(SuperStoreOrders3.groupby('sub_category')['profit'].sum())
+#this gives us sub category and category but they're seperate and i should join them into one line potentially?
+category
+Furniture          286782.10
+Office Supplies    518451.36
+Technology         662821.90
+Name: profit, dtype: float64
+sub_category
+Accessories    129442.58
+Appliances     141680.65
+Art             57953.93
+Binders         72458.26
+Bookcases      161924.32
+Chairs         141973.78
+Copiers        258087.74
+Envelopes       29581.89
+Fasteners       11525.25
+Furnishings     46967.55
+Labels          15010.35
+Machines        58606.88
+Paper           59197.92
+Phones         216684.70
+Storage        108461.74
+Supplies        22581.37
+Tables         -64083.55
+Name: profit, dtype: float64
+#Summarize the total revenue (sales) for each year.
+
+Revenue = SuperStoreOrders3.groupby('Year')['sales'].sum()
+Revenue
+Year
+2011    2255187
+2012    2677493
+2013    3405860
+2014    4300041
+Name: sales, dtype: int32
+#Identify the most expensive item to ship based on the shipping cost.
+
+Most_expensive = SuperStoreOrders3['shipping_cost'].max()
+print(f'The most expensive item costs £{Most_expensive}')
+The most expensive item costs £933.57
+Most_expensive_item = SuperStoreOrders3[SuperStoreOrders3['shipping_cost']==933.57]
+Most_expensive_item #identifying the cell with the most expensive item.
+order_id	order_date	ship_date	ship_mode	customer_name	segment	state	country	market	region	...	sub_category	product_name	sales	quantity	discount	profit	shipping_cost	order_priority	Year	Delivery Days
+13891	CA-2012-124891	2012-07-31	2012-07-31	Same Day	Rick Hansen	Consumer	New York	United States	US	East	...	Accessories	Plantronics CS510 - Over-the-Head monaural Wir...	2310	7	0.0	762.18	933.57	Critical	2012	0 days
+1 rows × 22 columns
+
+most_expensive_item = Most_expensive_item['product_name'] 
+#identifying the name of the most expensive item.
+print(f'The most expensive item is called {most_expensive_item} and costs £{Most_expensive}')
+#this doesnt quite work.
+The most expensive item is called 13891    Plantronics CS510 - Over-the-Head monaural Wir...
+Name: product_name, dtype: object and costs £933.57
+ 
